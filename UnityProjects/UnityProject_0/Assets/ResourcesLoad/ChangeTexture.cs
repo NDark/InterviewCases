@@ -1,9 +1,11 @@
 ﻿/**
-
+@file ChangeTexture.cs
+@author NDark
+@date 20160319 file started.
 */
 using UnityEngine;
 
-public class ResourcesLoad : MonoBehaviour 
+public class ChangeTexture : MonoBehaviour 
 {
 	public Material m_ObjMaterial = null ;
 	public string m_ResourceName = "Red128" ;
