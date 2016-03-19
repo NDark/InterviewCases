@@ -6,11 +6,12 @@ using UnityEngine;
 public class ResourcesLoad : MonoBehaviour 
 {
 	public Material m_ObjMaterial = null ;
+	public string m_ResourceName = "Red128" ;
 	
 	// Use this for initialization
 	void Start () 
 	{
-		Texture2D tex2D = Resources.Load("WhileSliced") as Texture2D;
+		Texture2D tex2D = Resources.Load(this.m_ResourceName) as Texture2D;
 		
 		m_ObjMaterial.mainTexture = tex2D ;
 		
