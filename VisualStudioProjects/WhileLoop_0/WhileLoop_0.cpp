@@ -11,6 +11,7 @@ int GetResource()
 	int ret = ( 0 == rand() % 2 ) ? 1 : 2 ;
 	return ret;
 }
+
 int main()
 {
 	srand( time(NULL) );
