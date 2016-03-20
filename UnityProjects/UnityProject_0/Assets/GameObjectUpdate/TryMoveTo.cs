@@ -19,7 +19,7 @@ public class TryMoveTo : MonoBehaviour
 	// Update is called once per frame
 	void Update () 
 	{
-		DoUpdate()
+		DoUpdate() ;
 	}
 	
 	public void DoUpdate()
