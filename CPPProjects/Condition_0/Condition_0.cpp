@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include <iostream>
 
-int GetCurrentCharacterID()
+int GetCurrentPlayerID()
 {
 	return rand() % 50;
 }
@@ -12,23 +12,22 @@ int GetCurrentCharacterID()
 int main()
 {
 
-	int sum = 0;
+	int notPlayerTimes = 0;
 
 	for (int i = 0; i < 100; ++i)
 	{
-		if ( i = GetCurrentCharacterID() )
+		if ( i = GetCurrentPlayerID() )
 		{
-			std::cout << i << " continue" << std::endl;
-			continue;
+			std::cout << i << " skip" << std::endl;
 		}
 		else
 		{
-			++sum;
+			++notPlayerTimes;
 		}
 		
 	}
 
-	std::cout << sum;
+	std::cout << notPlayerTimes;
 
 	int finishInteger;
 	std::cin >> finishInteger;

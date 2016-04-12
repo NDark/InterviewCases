@@ -41,7 +41,7 @@ void Character::TryMoveTo()
 	}
 	else
 	{
-		goal = (rand() % 1000) / 1000;
+		goal = (rand() % 1000) / 1000; // get another goal
 		++goalNum;
 		std::cout << this->m_Type << " reach goal" << std::endl;
 	}
