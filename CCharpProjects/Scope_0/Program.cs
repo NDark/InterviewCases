@@ -39,15 +39,19 @@ namespace Scope_0
 {
     class Program
     {
+        static void InitStorage(Storage[] _Storages )
+        {
+            for (int i = 0; i < _Storages.Length; ++i)
+            {
+                _Storages[i] = new Storage();
+                _Storages[i].m_Storage.Add(i);// fill the storages with [0] [1] ... [length-1]
+            }
+        }
+
         static void Main(string[] args)
         {
-
-            Storage [] storages = new Storage [100];
-            for (int i = 0; i < 100; ++i)
-            {
-                storages[i] = new Storage();
-                storages[i].m_Storage.Add(i);
-            }
+            Storage[] storages = new Storage[100];
+            InitStorage(storages);// fill the storages with [0] [1] ... [length-1]
 
             int totalSum = 0;
             for (int i = 0; i < 100; ++i)
