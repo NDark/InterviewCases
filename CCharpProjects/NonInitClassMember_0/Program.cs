@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NonInitClassMember_0
+namespace ClassMember
 {
     class Tooth
     {
@@ -15,7 +15,7 @@ namespace NonInitClassMember_0
     {
     	public void Print()
         {
-            System.Console.Out.WriteLine( m_Tooth0.Age);
+            System.Console.Out.WriteLine(m_Tooth0.Age);
             System.Console.Out.WriteLine(m_Tooth1.Age);
         }
 
