@@ -1,17 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Scope_1
 {
     class Program
     {
-        static void Main(string[] args)
+        // assume the function fetch one user's variable time.
+        static DateTime FetchUsersTime()
         {
             DateTime time = new DateTime();
-            
+            return time;
+        }
+
+        static void Main(string[] args)
+        {
         
             int sum = 0;
             Random random = new Random();
@@ -21,7 +22,7 @@ namespace Scope_1
 		        {
 			        if (random.Next(10) > 3 )
 			        {
-				        if (time.DayOfWeek !=  DayOfWeek.Sunday )
+				        if ( FetchUsersTime().DayOfWeek !=  DayOfWeek.Sunday )
 				        {
                             Console.WriteLine( "" + i + " continue");
 					        continue;
