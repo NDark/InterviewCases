@@ -14,7 +14,7 @@ class V2Data
 
     public void Print()
     {
-        System.Console.Out.WriteLine("" + X + " " + Y);
+        System.Console.Out.WriteLine(string.Format("{0} {1}", X, Y));
     }
     
 	private float X = 0 ;
