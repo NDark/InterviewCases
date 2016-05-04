@@ -43,7 +43,15 @@ namespace Scope_0
         {
             for (int i = 0; i < _Storages.Length; ++i)
             {
-                _Storages[i] = new Storage();
+                if (null == _Storages[i])
+                {
+                    _Storages[i] = new Storage();
+                }
+                else
+                {
+                    _Storages[i].m_Storage.Clear();
+                }
+                
                 _Storages[i].m_Storage.Add(i);// fill the storages with [0] [1] ... [length-1]
             }
         }
