@@ -1,17 +1,23 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class ResourceLoadPrefab : MonoBehaviour 
 {
-	public GameObject m_Prefab = null ;
+	GameObject m_Prefab = null ;
 	public string m_PrefabPath = "" ;
 
 	// Use this for initialization
 	void Start () 
 	{
+		/**
+		Please use Resources.Load to load a prefab and instantiate to a GameObject.
+		*/
 		m_Prefab = Resources.Load ( m_PrefabPath ) as GameObject;
+		
 		GameObject obj = GameObject.Instantiate( m_Prefab ) as GameObject ;
-		obj.transform.position = Vector3.zero ;
+		if( null != obj )
+		{
+			obj.transform.position = Vector3.zero ;
+		}
 	
 	}
 	
