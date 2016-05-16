@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 
 class Storage
@@ -25,7 +23,7 @@ class StorageCalculator
     void Calculate(Storage _Src)
     {
         summation = 0;
-        for (int i = 0; i < _Src.m_Storage.Count(); ++i)
+        for (int i = 0; i < _Src.m_Storage.Count; ++i)
         {
             summation += _Src.m_Storage[i];
         }
