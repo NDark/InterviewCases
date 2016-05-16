@@ -27,7 +27,7 @@ namespace Pointer_0
             {
                 Random r = new Random();
 
-                goal =  r.Next( 1000 )  / 1000;
+                goal = (float)( r.Next( 1000 ) )  / 1000.0f;
                 ++goalNum;
                 System.Console.Out.WriteLine(this.m_Type + " reach goal" );
             }
