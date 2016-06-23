@@ -16,6 +16,7 @@ public class TrackViewerSystem : MonoBehaviour
 	public bool m_DetailMode = false ;
 	
 	public Vector3 m_PressPos = Vector3.zero ;
+	public Vector3 m_LastPos = Vector3.zero ;
 
 	public void TrySlideRight()
 	{
@@ -156,32 +157,40 @@ public class TrackViewerSystem : MonoBehaviour
 		else if( Input.GetMouseButtonUp( 0 ) )
 		{
 			Vector3 distVec = Input.mousePosition - m_PressPos ;
-			if( distVec.y > 50 )
+			if( distVec.y > 50 && m_DetailMode )
 			{
-				if( m_DetailMode )
-				{
-					TryZoomOut() ;
-				}
+				TryZoomOut() ;
 			}
-			else if( distVec.x > 30 )
+			else if( distVec.x > 30 && false == m_DetailMode )
 			{
 				TrySlideRight() ;
 			}
-			else if( distVec.x < -30 )
+			else if( distVec.x < -30 && false == m_DetailMode )
 			{
 				TrySlideLeft() ;
 			}
 			else if( Mathf.Abs( distVec.x ) < 30 
-				&& Mathf.Abs( distVec.y ) < 30 )
+				&& Mathf.Abs( distVec.y ) < 30 
+			        && false == m_DetailMode )
 			{
-				if( false == m_DetailMode )
-				{
-					TryZoomIn() ;
-				}
+				TryZoomIn() ;
 			}
 		}
+		else if( Input.GetMouseButton( 0 ) 
+			&& m_DetailMode )
+		{
+			Vector3 moveVec = Input.mousePosition - m_LastPos ;
+			TrackBallObject( moveVec ) ;
+		}
 		
+		m_LastPos = Input.mousePosition ;
 	}
 	
-	
+	void TrackBallObject( Vector3 _InputVec )
+	{
+		GameObject obj = m_Objs[ m_CameraLookIndex ] ;
+		obj.transform.Rotate( m_Camera.transform.up , -1 * _InputVec.x , Space.World ) ;
+		obj.transform.Rotate( m_Camera.transform.right ,  _InputVec.y , Space.World ) ;
+		
+	}
 }
