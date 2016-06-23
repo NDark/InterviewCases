@@ -111,9 +111,11 @@ public class TrackViewerSystem : MonoBehaviour
 		
 		Vector3 assumePos = toTargetObjVec * assumDist ;
 		assumePos.y = m_CameraHeight ;
-		m_Camera.gameObject.transform.position = assumePos ;
-		m_Camera.gameObject.transform.LookAt( targetObjPos 
-		 , Vector3.up ) ;
+		
+		Debug.Log("AddComponent<CameraMoveTo");
+		moveTo = m_Camera.gameObject.AddComponent<CameraMoveTo>() ;
+		moveTo.m_Destination = assumePos ;
+		moveTo.m_LookTarget = targetObjPos ;
 		
 	}	
 }
