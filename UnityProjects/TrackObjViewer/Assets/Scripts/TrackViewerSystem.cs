@@ -13,7 +13,7 @@ public class TrackViewerSystem : MonoBehaviour
 	public float m_CameraMinDistance = 11.0f ;
 	public float m_CameraMaxHeight = 4.0f ;
 	public float m_CameraMinHeight = 1.0f ;
-	public float m_CameraMinFov = 30.0f ;
+	public float m_CameraMinFov = 40.0f ;
 	public float m_CameraMaxFov = 60.0f ;
 	public int m_CameraLookIndex = 0 ;
 	public bool m_DetailMode = false ;
