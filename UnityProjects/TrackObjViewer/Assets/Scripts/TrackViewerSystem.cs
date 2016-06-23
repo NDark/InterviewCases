@@ -11,6 +11,7 @@ public class TrackViewerSystem : MonoBehaviour
 	
 	public float m_CameraMaxDistance = 15.0f ;
 	public float m_CameraMinDistance = 11.0f ;
+	public float m_CameraHeight = 4.0f ;
 	public int m_CameraLookIndex = 0 ;
 	public bool m_DetailMode = false ;
 
@@ -39,6 +40,7 @@ public class TrackViewerSystem : MonoBehaviour
 	{
 		CollectObjects() ;
 		ArrangeObjects() ;
+		
 	}
 	
 	
@@ -46,7 +48,7 @@ public class TrackViewerSystem : MonoBehaviour
 	void Update () 
 	{
 	
-	
+		UpdateCamera() ;
 	}
 	
 	void CollectObjects()
@@ -82,5 +84,36 @@ public class TrackViewerSystem : MonoBehaviour
 			m_Objs[i].transform.position = setPos ;
 		}
 	}
-	
+
+	private void UpdateCamera() 
+	{
+		if( null == m_Camera )
+		{
+			return ;
+		}
+		CameraMoveTo moveTo = m_Camera.GetComponent<CameraMoveTo>() ;
+		bool isInAnim = ( null != moveTo ) ;
+		if( true == isInAnim )
+		{
+			return ;
+		}
+		if( m_CameraLookIndex >= m_Objs.Count )
+		{
+			return ;
+		}
+		
+		float assumDist = (m_DetailMode) ? 
+			m_Radious + m_CameraMinDistance : 
+				m_Radious + m_CameraMaxDistance ; 
+		Vector3 targetObjPos = m_Objs[ m_CameraLookIndex ].transform.position ;
+		Vector3 toTargetObjVec = targetObjPos - this.gameObject.transform.position ;
+		toTargetObjVec.Normalize() ;
+		
+		Vector3 assumePos = toTargetObjVec * assumDist ;
+		assumePos.y = m_CameraHeight ;
+		m_Camera.gameObject.transform.position = assumePos ;
+		m_Camera.gameObject.transform.LookAt( targetObjPos 
+		 , Vector3.up ) ;
+		
+	}	
 }
