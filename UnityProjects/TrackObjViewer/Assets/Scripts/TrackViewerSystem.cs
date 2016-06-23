@@ -14,15 +14,40 @@ public class TrackViewerSystem : MonoBehaviour
 	public float m_CameraHeight = 4.0f ;
 	public int m_CameraLookIndex = 0 ;
 	public bool m_DetailMode = false ;
+	
+	public Vector3 m_PressPos = Vector3.zero ;
 
 	public void TrySlideRight()
 	{
+		if( m_Objs.Count <= 0 )
+		{
+			return ;
+		}
 		
+		
+		m_CameraLookIndex += 1 ;
+		if( m_CameraLookIndex >= m_Objs.Count )
+		{
+			m_CameraLookIndex = 0 ;
+		}
+		
+		UpdateCamera() ;
 	}
 	
 	public void TrySlideLeft()
 	{
+		if( m_Objs.Count <= 0 )
+		{
+			return ;
+		}
 		
+		m_CameraLookIndex -= 1 ;
+		if( m_CameraLookIndex < 0 )
+		{
+			m_CameraLookIndex = m_Objs.Count - 1  ;
+		}
+		
+		UpdateCamera() ;
 	}
 	
 	public void TryZoomIn()
@@ -47,8 +72,8 @@ public class TrackViewerSystem : MonoBehaviour
 	// Update is called once per frame
 	void Update () 
 	{
-	
-		UpdateCamera() ;
+		DetectInput() ;
+		
 	}
 	
 	void CollectObjects()
@@ -112,10 +137,32 @@ public class TrackViewerSystem : MonoBehaviour
 		Vector3 assumePos = toTargetObjVec * assumDist ;
 		assumePos.y = m_CameraHeight ;
 		
-		Debug.Log("AddComponent<CameraMoveTo");
 		moveTo = m_Camera.gameObject.AddComponent<CameraMoveTo>() ;
 		moveTo.m_Destination = assumePos ;
 		moveTo.m_LookTarget = targetObjPos ;
 		
 	}	
+	
+	private void DetectInput()
+	{
+		if( Input.GetMouseButtonDown( 0 ) )
+		{
+			m_PressPos = Input.mousePosition ;		
+		}
+		else if( Input.GetMouseButtonUp( 0 ) )
+		{
+			Vector3 distVec = Input.mousePosition - m_PressPos ;
+			if( distVec.x > 0 )
+			{
+				TrySlideRight() ;
+			}
+			else
+			{
+				TrySlideLeft() ;
+			}
+		}
+		
+	}
+	
+	
 }

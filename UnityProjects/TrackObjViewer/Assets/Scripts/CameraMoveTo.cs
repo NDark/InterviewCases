@@ -5,7 +5,7 @@ public class CameraMoveTo : MonoBehaviour
 {
 	public Vector3 m_Destination = Vector3.zero ;
 	public Vector3 m_LookTarget = Vector3.zero ;
-	public float m_Threashold = 0.01f ;
+	public float m_Threashold = 0.1f ;
 	public float m_Speed = 3.0f ;
 	
 	public Quaternion m_FinalRotation = Quaternion.identity ;
