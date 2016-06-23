@@ -52,12 +52,16 @@ public class TrackViewerSystem : MonoBehaviour
 	
 	public void TryZoomIn()
 	{
-		
+		Debug.Log("TryZoomIn");
+		m_DetailMode = true ;
+		UpdateCamera() ;
 	}
 	
 	public void TryZoomOut()
 	{
-		
+		Debug.Log("TryZoomOut");
+		m_DetailMode = false ;
+		UpdateCamera() ;
 	}
 	
 	// Use this for initialization
@@ -120,7 +124,7 @@ public class TrackViewerSystem : MonoBehaviour
 		bool isInAnim = ( null != moveTo ) ;
 		if( true == isInAnim )
 		{
-			return ;
+			Component.DestroyImmediate( moveTo ) ;
 		}
 		if( m_CameraLookIndex >= m_Objs.Count )
 		{
@@ -152,13 +156,28 @@ public class TrackViewerSystem : MonoBehaviour
 		else if( Input.GetMouseButtonUp( 0 ) )
 		{
 			Vector3 distVec = Input.mousePosition - m_PressPos ;
-			if( distVec.x > 0 )
+			if( distVec.y > 50 )
+			{
+				if( m_DetailMode )
+				{
+					TryZoomOut() ;
+				}
+			}
+			else if( distVec.x > 30 )
 			{
 				TrySlideRight() ;
 			}
-			else
+			else if( distVec.x < -30 )
 			{
 				TrySlideLeft() ;
+			}
+			else if( Mathf.Abs( distVec.x ) < 30 
+				&& Mathf.Abs( distVec.y ) < 30 )
+			{
+				if( false == m_DetailMode )
+				{
+					TryZoomIn() ;
+				}
 			}
 		}
 		
