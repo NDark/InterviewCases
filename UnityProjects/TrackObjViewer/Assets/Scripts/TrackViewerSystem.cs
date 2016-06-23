@@ -11,7 +11,10 @@ public class TrackViewerSystem : MonoBehaviour
 	
 	public float m_CameraMaxDistance = 15.0f ;
 	public float m_CameraMinDistance = 11.0f ;
-	public float m_CameraHeight = 4.0f ;
+	public float m_CameraMaxHeight = 4.0f ;
+	public float m_CameraMinHeight = 1.0f ;
+	public float m_CameraMinFov = 30.0f ;
+	public float m_CameraMaxFov = 60.0f ;
 	public int m_CameraLookIndex = 0 ;
 	public bool m_DetailMode = false ;
 	
@@ -131,7 +134,8 @@ public class TrackViewerSystem : MonoBehaviour
 		{
 			return ;
 		}
-		
+		float assumFov = (m_DetailMode) ? m_CameraMinFov : m_CameraMaxFov ;
+		float assumHeight = (m_DetailMode) ? m_CameraMinHeight : m_CameraMaxHeight ;
 		float assumDist = (m_DetailMode) ? 
 			m_Radious + m_CameraMinDistance : 
 				m_Radious + m_CameraMaxDistance ; 
@@ -140,12 +144,12 @@ public class TrackViewerSystem : MonoBehaviour
 		toTargetObjVec.Normalize() ;
 		
 		Vector3 assumePos = toTargetObjVec * assumDist ;
-		assumePos.y = m_CameraHeight ;
+		assumePos.y = assumHeight ;
 		
 		moveTo = m_Camera.gameObject.AddComponent<CameraMoveTo>() ;
 		moveTo.m_Destination = assumePos ;
 		moveTo.m_LookTarget = targetObjPos ;
-		
+		moveTo.m_TargetFov = assumFov ;
 	}	
 	
 	private void DetectInput()

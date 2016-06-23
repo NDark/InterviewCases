@@ -7,6 +7,7 @@ public class CameraMoveTo : MonoBehaviour
 	public Vector3 m_LookTarget = Vector3.zero ;
 	public float m_Threashold = 0.1f ;
 	public float m_Speed = 3.0f ;
+	public float m_TargetFov = 0.0f ;
 	
 	public Quaternion m_FinalRotation = Quaternion.identity ;
 	
@@ -39,5 +40,12 @@ public class CameraMoveTo : MonoBehaviour
 		                                          , m_FinalRotation 
 		                                          , m_Speed * Time.deltaTime ) ;
 		
+		Camera camera = this.GetComponent<Camera>() ;
+		if( null != camera )
+		{
+			camera.fieldOfView = Mathf.Lerp( camera.fieldOfView
+			                                , m_TargetFov
+			                                , m_Speed * Time.deltaTime ) ;
+		}
 	}
 }
