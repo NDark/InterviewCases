@@ -5,18 +5,17 @@ using UnityEngine.UI;
 
 public class MapController : MonoBehaviour 
 {
-	public RectTransform m_DummyMap ;
 
 	public void ZoomIn()
 	{
-		m_ScaleValue += 0.1f;
-		UpdateScale ();
+		TryUpdateScale (m_ScaleValue, m_ScaleValue + 0.1f);
+		TryMovePosition ();
 	}
 
 	public void ZoomOut()
 	{
-		m_ScaleValue -= 0.1f;
-		UpdateScale ();
+		TryUpdateScale (m_ScaleValue, m_ScaleValue - 0.1f);
+		TryMovePosition ();
 	}
 
 	// Use this for initialization
@@ -35,9 +34,7 @@ public class MapController : MonoBehaviour
 
 		// mapRect.position = Vector3.zero;
 		mapRect.anchoredPosition= Vector3.zero;
-		UpdateScaneReal (mapRect);
-		m_DummyMap.position = mapRect.position;
-		m_DummyMap.localScale = mapRect.localScale;
+		UpdateScaneReal (mapRect , m_ScaleValue);
 	}
 	
 	// Update is called once per frame
@@ -45,97 +42,123 @@ public class MapController : MonoBehaviour
 		
 	}
 
-	public void OnDragDelegate(PointerEventData data)
+	void TryMovePosition()
 	{
-		Vector3 currentPos = mapRect.position;
+		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
+		mapRect.GetWorldCorners (m_MapCorners);
 
-		m_DummyMap.transform.Translate (data.delta.x, data.delta.y, 0.0f);
 		Vector3 suggestingMove = Vector3.zero;
-		float suggestingScale = m_ScaleValue;
-		bool valid = CheckIfMapIsInsideScreen (ref suggestingMove , ref suggestingScale);
+
+		bool valid = CheckIfCornersIsInsideScreen ( m_MapCorners , ref suggestingMove );
+
 		if (false == valid) 
 		{
-			m_DummyMap.anchoredPosition = mapRect.anchoredPosition;
+			mapRect.transform.Translate (suggestingMove);
 		} 
-		else
+
+	}
+
+	void TryMovePosition( Vector3 delta )
+	{
+		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
+		mapRect.GetWorldCorners (m_MapCorners);
+		for (int i = 0; i < m_MapCorners.Length; ++i) 
 		{
-			mapRect.anchoredPosition = m_DummyMap.anchoredPosition;
+			m_MapCorners [i] += delta;
+		}
+
+		Vector3 suggestingMove = Vector3.zero;
+
+		bool valid = CheckIfCornersIsInsideScreen ( m_MapCorners , ref suggestingMove );
+
+		if (true == valid) 
+		{
+			mapRect.transform.Translate (delta);
+
 		}
 	}
 
-	void UpdateScaneReal( RectTransform rect )
+	public void OnDragDelegate(PointerEventData data)
 	{
+		Vector3 delta = new Vector3 (data.delta.x, data.delta.y, 0.0f);
+		TryMovePosition (delta);
+	}
+
+	void UpdateScaneReal( RectTransform rect , float scaleValue )
+	{
+		m_ScaleValue = scaleValue;
 		rect.sizeDelta = new Vector2 (orgSizeOfTexture.width *m_ScaleValue , orgSizeOfTexture.height * m_ScaleValue );		
 	}
 
-	void UpdateScale()
+	void TryUpdateScale( float oldScale , float newScale )
 	{
-		UpdateScaneReal ( m_DummyMap );
 
-		Vector3 suggestingMove = Vector3.zero;
-		float suggestingScale = m_ScaleValue;
-		Vector3 currentPos = mapRect.position;
-		if (false == CheckIfMapIsInsideScreen (ref suggestingMove, ref suggestingScale)) 
-		{
-			UpdateScaneReal ( m_DummyMap );
-			UpdateScaneReal ( mapRect );
+		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
+		mapRect.GetWorldCorners (m_MapCorners);
 
-			m_DummyMap.transform.Translate (suggestingMove.x, suggestingMove.y, 0.0f);
-			mapRect.anchoredPosition = m_DummyMap.anchoredPosition;
-		} 
-		else 
+		Vector3 center = m_MapCorners [0] + m_MapCorners [2];
+		center *= 0.5f;
+		for( int i = 0 ; i < m_MapCorners.Length ; ++i )
 		{
-			UpdateScaneReal (mapRect);
+			m_MapToCornerVec [i] = m_MapCorners [i] - center;
+			m_MapToCornerVec [i] = m_MapToCornerVec [i] / oldScale * newScale;
+			m_MapCorners [i] = center + m_MapToCornerVec [i];
 		}
 
+		if ( true == CheckScaleIfMapIsSmallerThanScreen (m_MapCorners)) 
+		{
+			Debug.LogWarning ("TryUpdateScale() true == CheckScaleIfMapIsSmallerThanScreen" );
+			return;
+		}
+
+		UpdateScaneReal ( mapRect , newScale );
 
 	}
 
-	bool CheckIfMapIsInsideScreen( ref Vector3 suggestingMove , ref float suggestingScale )
+	bool CheckScaleIfMapIsSmallerThanScreen( Vector3 []corners )
+	{
+		Vector3 distance = corners [2] - corners [0];
+		return (distance.x <= (float)Screen.width - 0.001f || distance.y <= (float)Screen.height - 0.001f);
+	}
+
+	bool CheckIfCornersIsInsideScreen( Vector3 []corners, ref Vector3 suggestingMove )
 	{
 		bool ret = true ;
-
-		if (m_ScaleValue < 1.0f) 
-		{
-			m_ScaleValue = 1.0F;
-			UpdateScaneReal (m_DummyMap);
-			return true ;
-		}
 
 		// for 4 corners of mapRect
 		// check they are invalid or not.
 		// and return the suggestion scale and shift position.
 
 		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
-		m_DummyMap.GetWorldCorners (m_MapCorners);
 
-		if (m_MapCorners [0].x > 0.0f) 
+		if (corners [0].x > 0.0f) 
 		{
 			ret = false;
-			suggestingMove.x = 0.0f - m_MapCorners [0].x;
+			suggestingMove.x = 0.0f - corners [0].x;
 		}
 
-		if (m_MapCorners [0].y > 0.0f ) 
+		if (corners [0].y > 0.0f ) 
 		{
 			ret = false;
-			suggestingMove.y = 0.0f - m_MapCorners [0].y;
+			suggestingMove.y = 0.0f - corners [0].y;
 		}
 
-		if (m_MapCorners [2].x < Screen.width ) 
+		if (corners [2].x < Screen.width ) 
 		{
 			ret = false;
-			suggestingMove.x = Screen.width - m_MapCorners [2].x;
+			suggestingMove.x = Screen.width - corners [2].x;
 		}
 
-		if (m_MapCorners [2].y < Screen.height ) 
+		if (corners [2].y < Screen.height ) 
 		{
 			ret = false;
-			suggestingMove.y = Screen.height - m_MapCorners [2].y;
+			suggestingMove.y = Screen.height - corners [2].y;
 		}
 
 		return ret;
 	}
 
+	Vector3[] m_MapToCornerVec = new Vector3[4];
 	Vector3[] m_MapCorners = new Vector3[4];
 	RectTransform mapRect ;
 	Sprite m_Sprite ;
