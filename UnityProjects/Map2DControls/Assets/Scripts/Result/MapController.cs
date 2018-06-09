@@ -6,17 +6,16 @@ using UnityEngine.UI;
 public class MapController : MonoBehaviour 
 {
 	float m_ZoomSpeed = 10.0f ;
+	float m_MovingSpeed = 10.0f ;
 
 	public void ZoomIn()
 	{
 		TryUpdateScale (m_ScaleValue, m_ScaleValue + 0.1f);
-		TryMovePosition ();
 	}
 
 	public void ZoomOut()
 	{
 		TryUpdateScale (m_ScaleValue, m_ScaleValue - 0.1f);
-		TryMovePosition ();
 	}
 
 	// Use this for initialization
@@ -53,6 +52,9 @@ public class MapController : MonoBehaviour
 		// mapRect.position = Vector3.zero;
 		mapRect.anchoredPosition= Vector3.zero;
 		UpdateScaneReal (mapRect , m_ScaleValue);
+
+		m_TargetValue = m_ScaleValue;
+		m_SuggestMovePosition = mapRect.transform.position;
 	}
 	
 	// Update is called once per frame
@@ -64,8 +66,13 @@ public class MapController : MonoBehaviour
 			{
 				float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
 				UpdateScaneReal (mapRect, value);
+				TryMovePosition ();
 			}
 
+			if (m_SuggestMovePosition != mapRect.transform.position) 
+			{
+				mapRect.transform.position = Vector3.Lerp (mapRect.transform.position, m_SuggestMovePosition, Time.deltaTime * m_MovingSpeed );
+			}
 		}
 
 	}
@@ -78,12 +85,10 @@ public class MapController : MonoBehaviour
 		Vector3 suggestingMove = Vector3.zero;
 
 		bool valid = CheckIfCornersIsInsideScreen ( m_MapCorners , ref suggestingMove );
-
-		if (false == valid) 
+		if (true == valid) 
 		{
-			mapRect.transform.Translate (suggestingMove);
+			m_SuggestMovePosition = mapRect.transform.position + suggestingMove;
 		} 
-
 	}
 
 	void TryMovePosition( Vector3 delta )
@@ -98,12 +103,12 @@ public class MapController : MonoBehaviour
 		Vector3 suggestingMove = Vector3.zero;
 
 		bool valid = CheckIfCornersIsInsideScreen ( m_MapCorners , ref suggestingMove );
-
 		if (true == valid) 
 		{
-			mapRect.transform.Translate (delta);
-
+			m_SuggestMovePosition = mapRect.transform.position + suggestingMove;
 		}
+
+		mapRect.transform.Translate (delta);
 	}
 
 	public void OnDragDelegate(PointerEventData data)
@@ -167,7 +172,7 @@ public class MapController : MonoBehaviour
 
 	bool CheckIfCornersIsInsideScreen( Vector3 []corners, ref Vector3 suggestingMove )
 	{
-		bool ret = true ;
+		bool ret = false  ;
 
 		// for 4 corners of mapRect
 		// check they are invalid or not.
@@ -177,25 +182,25 @@ public class MapController : MonoBehaviour
 
 		if (corners [0].x > 0.0f) 
 		{
-			ret = false;
+			ret = true;
 			suggestingMove.x = 0.0f - corners [0].x;
 		}
 
 		if (corners [0].y > 0.0f ) 
 		{
-			ret = false;
+			ret = true;
 			suggestingMove.y = 0.0f - corners [0].y;
 		}
 
 		if (corners [2].x < Screen.width ) 
 		{
-			ret = false;
+			ret = true;
 			suggestingMove.x = Screen.width - corners [2].x;
 		}
 
 		if (corners [2].y < Screen.height ) 
 		{
-			ret = false;
+			ret = true;
 			suggestingMove.y = Screen.height - corners [2].y;
 		}
 
@@ -211,5 +216,5 @@ public class MapController : MonoBehaviour
 	float m_ScaleValue = 1;
 
 	float m_TargetValue = 1 ;
-	Vector3 m_SuggestMoveVec = Vector3.zero ;
+	Vector3 m_SuggestMovePosition = Vector3.zero ;
 }
