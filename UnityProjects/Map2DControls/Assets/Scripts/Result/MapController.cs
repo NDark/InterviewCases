@@ -11,11 +11,14 @@ public class MapController : MonoBehaviour
 
 	public void ZoomIn()
 	{
+		
+		m_SuggestMovePosition += TryCompensateScalePosition (m_ScaleValue, m_ScaleValue + m_ScaleStep);
 		TryCheckScale (m_ScaleValue, m_ScaleValue + m_ScaleStep);
 	}
 
 	public void ZoomOut()
 	{
+		m_SuggestMovePosition += TryCompensateScalePosition (m_ScaleValue, m_ScaleValue - m_ScaleStep);
 		TryCheckScale (m_ScaleValue, m_ScaleValue - m_ScaleStep);
 	}
 
@@ -73,7 +76,14 @@ public class MapController : MonoBehaviour
 		if (Input.touchCount >= 2) 
 		{
 			TryCheckZoomByPinch ();
-			UpdateScale ();
+
+			float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
+			Vector3 diff = TryCompensateScalePosition (m_ScaleValue, value);
+			UpdateScaleBy (value);
+
+			mapRect.transform.position = mapRect.transform.position + diff;
+			m_SuggestMovePosition = mapRect.transform.position;
+
 		} 
 		else 
 		{
@@ -84,7 +94,7 @@ public class MapController : MonoBehaviour
 
 		if ( Input.touchCount <= 0 && false == m_IsUnderDrag) 
 		{
-			UpdateScale ();
+			UpdateScaleAndCheckPositionValid ();
 
 			if (m_TargetValue >= 1.0f &&m_SuggestMovePosition != mapRect.transform.position) 
 			{
@@ -96,10 +106,10 @@ public class MapController : MonoBehaviour
 
 		if (Input.touchCount <= 0 && m_TargetValue < 1.0f) 
 		{
-			if (Time.time > m_CheckNextTime) 
+			if (Time.time > m_CheckNextTime) // recover
 			{
 				m_TargetValue = 1.0f;
-				UpdateScale ();
+				UpdateScaleAndCheckPositionValid ();
 			}
 		}
 		else 
@@ -109,7 +119,7 @@ public class MapController : MonoBehaviour
 
 	}
 
-	void UpdateScale()
+	void UpdateScaleAndCheckPositionValid()
 	{
 		if (m_TargetValue != m_ScaleValue) 
 		{
@@ -119,30 +129,18 @@ public class MapController : MonoBehaviour
 		}
 	}
 
-	void TryCheckZoomByPinch()
+	void UpdateScaleBy( float newScaleValue )
 	{
-		if (Input.touchCount != 2) 
+		UpdateScaleReal (mapRect, newScaleValue);
+	}
+
+	void UpdateScale()
+	{
+		if (m_TargetValue != m_ScaleValue) 
 		{
-			return;
+			float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
+			UpdateScaleBy (value);
 		}
-
-		Touch touch0 = Input.GetTouch(0);
-		Touch touch1 = Input.GetTouch(1);
-
-		Vector3 currentDistance = touch0.position - touch1.position;
-
-		if (Vector3.zero == m_PriviousTouchesDistance) {
-			m_PriviousTouchesDistance = currentDistance;
-		} 
-
-		float scaleRatio = currentDistance.magnitude / m_PriviousTouchesDistance.magnitude;
-
-		TryCheckScale ( m_ScaleValue , m_TargetValue * scaleRatio);
-
-		m_DebugText.text = scaleRatio.ToString();
-
-		m_PriviousTouchesDistance = currentDistance;
-
 	}
 
 	void TryMovePosition()
@@ -207,9 +205,42 @@ public class MapController : MonoBehaviour
 		rect.sizeDelta = new Vector2 (orgSizeOfTexture.width *m_ScaleValue , orgSizeOfTexture.height * m_ScaleValue );		
 	}
 
+	void TryCheckZoomByPinch()
+	{
+		if (Input.touchCount != 2) 
+		{
+			return;
+		}
+
+		Touch touch0 = Input.GetTouch(0);
+		Touch touch1 = Input.GetTouch(1);
+
+		Vector3 currentDistance = touch0.position - touch1.position;
+
+		if (Vector3.zero == m_PriviousTouchesDistance) {
+			m_PriviousTouchesDistance = currentDistance;
+		} 
+
+		float scaleRatio = currentDistance.magnitude / m_PriviousTouchesDistance.magnitude;
+
+		TryCheckScale ( m_ScaleValue , m_TargetValue * scaleRatio);
+
+		m_PriviousTouchesDistance = currentDistance;
+
+	}
+
+	Vector3 TryCompensateScalePosition(float oldScale , float newScale)
+	{
+		Vector3 newPos = mapRect.transform.localPosition / oldScale * newScale;
+		Vector3 diffVec = newPos - mapRect.transform.localPosition ;
+		// m_DebugText.text = string.Format ("{0}->{1},{2}" , oldScale , newScale , diffVec);
+		return diffVec;
+
+	}
+
 	void TryCheckScale( float oldScale , float newScale )
 	{
-
+		
 		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
 		mapRect.GetWorldCorners (m_MapCorners);
 
@@ -221,6 +252,7 @@ public class MapController : MonoBehaviour
 			m_MapToCornerVec [i] = m_MapToCornerVec [i] / oldScale * newScale;
 			m_MapCorners [i] = center + m_MapToCornerVec [i];
 		}
+
 
 		if (true == CheckScaleIfMapIsSmallerThanScreen (m_MapCorners)) 
 		{
