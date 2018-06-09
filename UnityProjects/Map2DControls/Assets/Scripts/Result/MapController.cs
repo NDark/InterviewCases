@@ -59,7 +59,7 @@ public class MapController : MonoBehaviour
 
 		// mapRect.position = Vector3.zero;
 		mapRect.anchoredPosition= Vector3.zero;
-		UpdateScaneReal (mapRect , m_ScaleValue);
+		UpdateScaleReal (mapRect , m_ScaleValue);
 
 		m_TargetValue = m_ScaleValue;
 		m_SuggestMovePosition = mapRect.transform.position;
@@ -69,9 +69,6 @@ public class MapController : MonoBehaviour
 	void Update () 
 	{
 		
-
-
-
 		// Debug.LogWarning ("Input.touchCount" + Input.touchCount );
 		if (Input.touchCount >= 2) 
 		{
@@ -81,6 +78,7 @@ public class MapController : MonoBehaviour
 		else 
 		{
 			m_PriviousTouchesDistance = Vector3.zero;
+
 		}
 
 
@@ -88,10 +86,25 @@ public class MapController : MonoBehaviour
 		{
 			UpdateScale ();
 
-			if (m_SuggestMovePosition != mapRect.transform.position) 
+			if (m_TargetValue >= 1.0f &&m_SuggestMovePosition != mapRect.transform.position) 
 			{
 				mapRect.transform.position = Vector3.Lerp (mapRect.transform.position, m_SuggestMovePosition, Time.deltaTime * m_MovingSpeed );
 			}
+
+		}
+
+
+		if (Input.touchCount <= 0 && m_TargetValue < 1.0f) 
+		{
+			if (Time.time > m_CheckNextTime) 
+			{
+				m_TargetValue = 1.0f;
+				UpdateScale ();
+			}
+		}
+		else 
+		{
+			m_CheckNextTime = Time.time + 0.3f;
 		}
 
 	}
@@ -101,7 +114,7 @@ public class MapController : MonoBehaviour
 		if (m_TargetValue != m_ScaleValue) 
 		{
 			float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
-			UpdateScaneReal (mapRect, value);
+			UpdateScaleReal (mapRect, value);
 			TryMovePosition ();
 		}
 	}
@@ -188,7 +201,7 @@ public class MapController : MonoBehaviour
 		m_IsUnderDrag = false;
 	}
 
-	void UpdateScaneReal( RectTransform rect , float scaleValue )
+	void UpdateScaleReal( RectTransform rect , float scaleValue )
 	{
 		m_ScaleValue = scaleValue;
 		rect.sizeDelta = new Vector2 (orgSizeOfTexture.width *m_ScaleValue , orgSizeOfTexture.height * m_ScaleValue );		
@@ -209,14 +222,12 @@ public class MapController : MonoBehaviour
 			m_MapCorners [i] = center + m_MapToCornerVec [i];
 		}
 
-		if ( true == CheckScaleIfMapIsSmallerThanScreen (m_MapCorners)) 
+		if (true == CheckScaleIfMapIsSmallerThanScreen (m_MapCorners)) 
 		{
-			Debug.LogWarning ("TryCheckScale() true == CheckScaleIfMapIsSmallerThanScreen" );
-			return;
-		}
+			// Debug.LogWarning ("TryCheckScale() true == CheckScaleIfMapIsSmallerThanScreen");
+		} 
 
 		m_TargetValue = newScale;
-		// UpdateScaneReal ( mapRect , newScale );
 
 	}
 
@@ -226,7 +237,7 @@ public class MapController : MonoBehaviour
 		bool ret = (distance.x <= (float)Screen.width - 0.01f || distance.y <= (float)Screen.height - 0.01f);
 		if (true == ret) 
 		{
-			Debug.Log ("distance=" + distance );
+			// Debug.Log ("distance=" + distance );
 		}
 		return ret ;
 	}
@@ -282,5 +293,7 @@ public class MapController : MonoBehaviour
 	float m_TargetValue = 1 ;
 	Vector3 m_SuggestMovePosition = Vector3.zero ;
 	Vector3 m_PriviousTouchesDistance = Vector3.zero ;
+
+	float m_CheckNextTime = 0.0f ;
 
 }
