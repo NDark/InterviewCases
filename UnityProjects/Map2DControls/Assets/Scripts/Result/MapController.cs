@@ -11,12 +11,12 @@ public class MapController : MonoBehaviour
 
 	public void ZoomIn()
 	{
-		TryUpdateScale (m_ScaleValue, m_ScaleValue + m_ScaleStep);
+		TryCheckScale (m_ScaleValue, m_ScaleValue + m_ScaleStep);
 	}
 
 	public void ZoomOut()
 	{
-		TryUpdateScale (m_ScaleValue, m_ScaleValue - m_ScaleStep);
+		TryCheckScale (m_ScaleValue, m_ScaleValue - m_ScaleStep);
 	}
 
 	// Use this for initialization
@@ -76,6 +76,7 @@ public class MapController : MonoBehaviour
 		if (Input.touchCount >= 2) 
 		{
 			TryCheckZoomByPinch ();
+			UpdateScale ();
 		} 
 		else 
 		{
@@ -85,12 +86,7 @@ public class MapController : MonoBehaviour
 
 		if ( Input.touchCount <= 0 && false == m_IsUnderDrag) 
 		{
-			if (m_TargetValue != m_ScaleValue) 
-			{
-				float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
-				UpdateScaneReal (mapRect, value);
-				TryMovePosition ();
-			}
+			UpdateScale ();
 
 			if (m_SuggestMovePosition != mapRect.transform.position) 
 			{
@@ -98,6 +94,16 @@ public class MapController : MonoBehaviour
 			}
 		}
 
+	}
+
+	void UpdateScale()
+	{
+		if (m_TargetValue != m_ScaleValue) 
+		{
+			float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
+			UpdateScaneReal (mapRect, value);
+			TryMovePosition ();
+		}
 	}
 
 	void TryCheckZoomByPinch()
@@ -118,7 +124,7 @@ public class MapController : MonoBehaviour
 
 		float scaleRatio = currentDistance.magnitude / m_PriviousTouchesDistance.magnitude;
 
-		TryUpdateScale ( m_ScaleValue , m_ScaleValue * scaleRatio);
+		TryCheckScale ( m_ScaleValue , m_TargetValue * scaleRatio);
 
 		m_DebugText.text = scaleRatio.ToString();
 
@@ -188,7 +194,7 @@ public class MapController : MonoBehaviour
 		rect.sizeDelta = new Vector2 (orgSizeOfTexture.width *m_ScaleValue , orgSizeOfTexture.height * m_ScaleValue );		
 	}
 
-	void TryUpdateScale( float oldScale , float newScale )
+	void TryCheckScale( float oldScale , float newScale )
 	{
 
 		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
@@ -205,7 +211,7 @@ public class MapController : MonoBehaviour
 
 		if ( true == CheckScaleIfMapIsSmallerThanScreen (m_MapCorners)) 
 		{
-			Debug.LogWarning ("TryUpdateScale() true == CheckScaleIfMapIsSmallerThanScreen" );
+			Debug.LogWarning ("TryCheckScale() true == CheckScaleIfMapIsSmallerThanScreen" );
 			return;
 		}
 
