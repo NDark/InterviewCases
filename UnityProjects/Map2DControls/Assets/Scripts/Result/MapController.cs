@@ -5,17 +5,18 @@ using UnityEngine.UI;
 
 public class MapController : MonoBehaviour 
 {
-	float m_ZoomSpeed = 10.0f ;
-	float m_MovingSpeed = 10.0f ;
+	public Text m_DebugText;
+	float m_ScaleStep = 0.3f ;
+
 
 	public void ZoomIn()
 	{
-		TryUpdateScale (m_ScaleValue, m_ScaleValue + 0.1f);
+		TryUpdateScale (m_ScaleValue, m_ScaleValue + m_ScaleStep);
 	}
 
 	public void ZoomOut()
 	{
-		TryUpdateScale (m_ScaleValue, m_ScaleValue - 0.1f);
+		TryUpdateScale (m_ScaleValue, m_ScaleValue - m_ScaleStep);
 	}
 
 	// Use this for initialization
@@ -47,7 +48,14 @@ public class MapController : MonoBehaviour
 		mapRect = this.GetComponent<RectTransform> ();
 		Image image = this.GetComponent<Image> ();
 		m_Sprite = image.sprite;
-		orgSizeOfTexture = m_Sprite.textureRect ;
+		Debug.LogWarning ("Screen.width" + Screen.width);
+		Debug.LogWarning ("Screen.height" + Screen.height);
+
+		float textureRatio = m_Sprite.textureRect.width / m_Sprite.textureRect.height;
+		orgSizeOfTexture.Set( 0 , 0 
+			, Screen.height * textureRatio, Screen.height ) ;
+
+		Debug.LogWarning ("orgSizeOfTexture" + orgSizeOfTexture);
 
 		// mapRect.position = Vector3.zero;
 		mapRect.anchoredPosition= Vector3.zero;
@@ -60,7 +68,22 @@ public class MapController : MonoBehaviour
 	// Update is called once per frame
 	void Update () 
 	{
-		if (false == m_IsUnderDrag) 
+		
+
+
+
+		// Debug.LogWarning ("Input.touchCount" + Input.touchCount );
+		if (Input.touchCount >= 2) 
+		{
+			TryCheckZoomByPinch ();
+		} 
+		else 
+		{
+			m_PriviousTouchesDistance = Vector3.zero;
+		}
+
+
+		if ( Input.touchCount <= 0 && false == m_IsUnderDrag) 
 		{
 			if (m_TargetValue != m_ScaleValue) 
 			{
@@ -74,6 +97,32 @@ public class MapController : MonoBehaviour
 				mapRect.transform.position = Vector3.Lerp (mapRect.transform.position, m_SuggestMovePosition, Time.deltaTime * m_MovingSpeed );
 			}
 		}
+
+	}
+
+	void TryCheckZoomByPinch()
+	{
+		if (Input.touchCount != 2) 
+		{
+			return;
+		}
+
+		Touch touch0 = Input.GetTouch(0);
+		Touch touch1 = Input.GetTouch(1);
+
+		Vector3 currentDistance = touch0.position - touch1.position;
+
+		if (Vector3.zero == m_PriviousTouchesDistance) {
+			m_PriviousTouchesDistance = currentDistance;
+		} 
+
+		float scaleRatio = currentDistance.magnitude / m_PriviousTouchesDistance.magnitude;
+
+		TryUpdateScale ( m_ScaleValue , m_ScaleValue * scaleRatio);
+
+		m_DebugText.text = scaleRatio.ToString();
+
+		m_PriviousTouchesDistance = currentDistance;
 
 	}
 
@@ -102,18 +151,24 @@ public class MapController : MonoBehaviour
 
 		Vector3 suggestingMove = Vector3.zero;
 
-		bool valid = CheckIfCornersIsInsideScreen ( m_MapCorners , ref suggestingMove );
-		if (true == valid) 
+		bool invalid = CheckIfCornersIsInsideScreen ( m_MapCorners , ref suggestingMove );
+		if (true == invalid) 
 		{
 			m_SuggestMovePosition = mapRect.transform.position + suggestingMove;
+		} 
+		else 
+		{
+			m_SuggestMovePosition = mapRect.transform.position + delta;
 		}
 
 		mapRect.transform.Translate (delta);
 	}
 
+
 	public void OnDragDelegate(PointerEventData data)
 	{
 		Vector3 delta = new Vector3 (data.delta.x, data.delta.y, 0.0f);
+
 		TryMovePosition (delta);
 	}
 
@@ -207,6 +262,9 @@ public class MapController : MonoBehaviour
 		return ret;
 	}
 
+	float m_ZoomSpeed = 10.0f ;
+	float m_MovingSpeed = 10.0f ;
+
 	bool m_IsUnderDrag = false ;
 	Vector3[] m_MapToCornerVec = new Vector3[4];
 	Vector3[] m_MapCorners = new Vector3[4];
@@ -217,4 +275,6 @@ public class MapController : MonoBehaviour
 
 	float m_TargetValue = 1 ;
 	Vector3 m_SuggestMovePosition = Vector3.zero ;
+	Vector3 m_PriviousTouchesDistance = Vector3.zero ;
+
 }
