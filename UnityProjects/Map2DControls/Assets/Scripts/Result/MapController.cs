@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class MapController : MonoBehaviour 
 {
+	float m_ZoomSpeed = 10.0f ;
 
 	public void ZoomIn()
 	{
@@ -22,10 +23,27 @@ public class MapController : MonoBehaviour
 	void Start () 
 	{
 		EventTrigger trigger = GetComponent<EventTrigger>();
-		EventTrigger.Entry entry = new EventTrigger.Entry();
-		entry.eventID = EventTriggerType.Drag;
-		entry.callback.AddListener((data) => { OnDragDelegate((PointerEventData)data); });
-		trigger.triggers.Add(entry);
+		{
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.Drag;
+			entry.callback.AddListener((data) => { OnDragDelegate((PointerEventData)data); });
+			trigger.triggers.Add(entry);
+		}
+
+		{
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.BeginDrag;
+			entry.callback.AddListener((data) => { OnBeginDrag((PointerEventData)data); });
+			trigger.triggers.Add(entry);
+		}
+
+		{
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.EndDrag;
+			entry.callback.AddListener((data) => { OnEndDrag((PointerEventData)data); });
+			trigger.triggers.Add(entry);
+		}
+
 
 		mapRect = this.GetComponent<RectTransform> ();
 		Image image = this.GetComponent<Image> ();
@@ -38,8 +56,18 @@ public class MapController : MonoBehaviour
 	}
 	
 	// Update is called once per frame
-	void Update () {
-		
+	void Update () 
+	{
+		if (false == m_IsUnderDrag) 
+		{
+			if (m_TargetValue != m_ScaleValue) 
+			{
+				float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
+				UpdateScaneReal (mapRect, value);
+			}
+
+		}
+
 	}
 
 	void TryMovePosition()
@@ -84,6 +112,16 @@ public class MapController : MonoBehaviour
 		TryMovePosition (delta);
 	}
 
+	public void OnBeginDrag(PointerEventData data)
+	{
+		m_IsUnderDrag = true;
+	}
+
+	public void OnEndDrag(PointerEventData data)
+	{
+		m_IsUnderDrag = false;
+	}
+
 	void UpdateScaneReal( RectTransform rect , float scaleValue )
 	{
 		m_ScaleValue = scaleValue;
@@ -111,14 +149,20 @@ public class MapController : MonoBehaviour
 			return;
 		}
 
-		UpdateScaneReal ( mapRect , newScale );
+		m_TargetValue = newScale;
+		// UpdateScaneReal ( mapRect , newScale );
 
 	}
 
 	bool CheckScaleIfMapIsSmallerThanScreen( Vector3 []corners )
 	{
 		Vector3 distance = corners [2] - corners [0];
-		return (distance.x <= (float)Screen.width - 0.001f || distance.y <= (float)Screen.height - 0.001f);
+		bool ret = (distance.x <= (float)Screen.width - 0.01f || distance.y <= (float)Screen.height - 0.01f);
+		if (true == ret) 
+		{
+			Debug.Log ("distance=" + distance );
+		}
+		return ret ;
 	}
 
 	bool CheckIfCornersIsInsideScreen( Vector3 []corners, ref Vector3 suggestingMove )
@@ -158,10 +202,14 @@ public class MapController : MonoBehaviour
 		return ret;
 	}
 
+	bool m_IsUnderDrag = false ;
 	Vector3[] m_MapToCornerVec = new Vector3[4];
 	Vector3[] m_MapCorners = new Vector3[4];
 	RectTransform mapRect ;
 	Sprite m_Sprite ;
 	Rect orgSizeOfTexture;
 	float m_ScaleValue = 1;
+
+	float m_TargetValue = 1 ;
+	Vector3 m_SuggestMoveVec = Vector3.zero ;
 }
