@@ -60,9 +60,21 @@ public class MapController : MonoBehaviour
 		Image image = this.GetComponent<Image> ();
 		Sprite sprite = image.sprite;
 
-		float textureRatio = sprite.textureRect.width / sprite.textureRect.height;
-		orgSizeOfTexture.Set( 0 , 0 
-			, Screen.height * textureRatio, Screen.height ) ;
+		if (Screen.width < Screen.height) 
+		{
+			// portrait
+			float textureRatio = sprite.textureRect.width / sprite.textureRect.height;
+			orgSizeOfTexture.Set (0, 0 
+				, Screen.height * textureRatio, Screen.height);
+		} 
+		else 
+		{
+			// landscale
+			float textureRatio = sprite.textureRect.height / sprite.textureRect.width;
+			orgSizeOfTexture.Set (0, 0 
+				, Screen.width , textureRatio * Screen.width);
+		}
+
 
 		// mapRect.position = Vector3.zero;
 		mapRect.anchoredPosition= Vector3.zero;
