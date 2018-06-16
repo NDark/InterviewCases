@@ -1,25 +1,26 @@
-﻿using System.Collections;
-using UnityEngine.EventSystems;
+﻿using UnityEngine.EventSystems;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MapController : MonoBehaviour 
 {
-	public Text m_DebugText;
-	float m_ScaleStep = 0.3f ;
+	const float m_ZoomSpeed = 10.0f ;
+	const float m_MovingSpeed = 10.0f ;
+	const float m_ScaleStep = 0.3f ;
+
+	public RectTransform m_TargetUnderMap = null ;
 
 
 	public void ZoomIn()
 	{
-		
-		m_SuggestMovePosition += TryCompensateScalePosition (m_ScaleValue, m_ScaleValue + m_ScaleStep);
-		TryCheckScale (m_ScaleValue, m_ScaleValue + m_ScaleStep);
+		m_SuggestMovePosition += CalculateCompansatePositionFromScaleDiff (m_ScaleValue, m_ScaleValue + m_ScaleStep);
+		SetScaleGoal ( m_ScaleValue + m_ScaleStep);
 	}
 
 	public void ZoomOut()
 	{
-		m_SuggestMovePosition += TryCompensateScalePosition (m_ScaleValue, m_ScaleValue - m_ScaleStep);
-		TryCheckScale (m_ScaleValue, m_ScaleValue - m_ScaleStep);
+		m_SuggestMovePosition += CalculateCompansatePositionFromScaleDiff (m_ScaleValue, m_ScaleValue - m_ScaleStep);
+		SetScaleGoal ( m_ScaleValue - m_ScaleStep);
 	}
 
 	// Use this for initialization
@@ -47,18 +48,21 @@ public class MapController : MonoBehaviour
 			trigger.triggers.Add(entry);
 		}
 
+		{
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.PointerClick;
+			entry.callback.AddListener((data) => { OnClick((PointerEventData)data); });
+			trigger.triggers.Add(entry);
+		}
+
 
 		mapRect = this.GetComponent<RectTransform> ();
 		Image image = this.GetComponent<Image> ();
-		m_Sprite = image.sprite;
-		Debug.LogWarning ("Screen.width" + Screen.width);
-		Debug.LogWarning ("Screen.height" + Screen.height);
+		Sprite sprite = image.sprite;
 
-		float textureRatio = m_Sprite.textureRect.width / m_Sprite.textureRect.height;
+		float textureRatio = sprite.textureRect.width / sprite.textureRect.height;
 		orgSizeOfTexture.Set( 0 , 0 
 			, Screen.height * textureRatio, Screen.height ) ;
-
-		Debug.LogWarning ("orgSizeOfTexture" + orgSizeOfTexture);
 
 		// mapRect.position = Vector3.zero;
 		mapRect.anchoredPosition= Vector3.zero;
@@ -78,7 +82,7 @@ public class MapController : MonoBehaviour
 			TryCheckZoomByPinch ();
 
 			float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
-			Vector3 diff = TryCompensateScalePosition (m_ScaleValue, value);
+			Vector3 diff = CalculateCompansatePositionFromScaleDiff (m_ScaleValue, value);
 			UpdateScaleBy (value);
 
 			mapRect.transform.position = mapRect.transform.position + diff;
@@ -119,13 +123,45 @@ public class MapController : MonoBehaviour
 
 	}
 
+	// delegate
+	void OnClick(PointerEventData data)
+	{
+		Vector3 localPos = this.mapRect.InverseTransformPoint (data.position);
+
+		m_TargetLocalUnderScale1 = localPos * (1.0f/ m_ScaleValue);// revert to scale 1
+
+		UpdateTargetPos (localPos);
+		m_TargetUnderMap.gameObject.SetActive (true);
+	}
+
+	void OnDragDelegate(PointerEventData data)
+	{
+		Vector3 delta = new Vector3 (data.delta.x, data.delta.y, 0.0f);
+		TryMovePosition (delta);
+	}
+
+	void OnBeginDrag(PointerEventData data)
+	{
+		m_IsUnderDrag = true;
+	}
+
+	void OnEndDrag(PointerEventData data)
+	{
+		m_IsUnderDrag = false;
+	}
+
+	/*
+	 * When input is release, scale value will try approach from m_ScaleValue to m_TargetValue.
+	 * And update m_ScaleValue to by UpdateScaleReal()
+	 * Finally test m_SuggestMovePosition by CheckScaleAndAssignSuggestPosition().
+	*/
 	void UpdateScaleAndCheckPositionValid()
 	{
 		if (m_TargetValue != m_ScaleValue) 
 		{
 			float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
 			UpdateScaleReal (mapRect, value);
-			TryMovePosition ();
+			CheckScaleAndAssignSuggestPosition ();
 		}
 	}
 
@@ -134,20 +170,18 @@ public class MapController : MonoBehaviour
 		UpdateScaleReal (mapRect, newScaleValue);
 	}
 
-	void UpdateScale()
+	void UpdateScaleReal( RectTransform rect , float scaleValue )
 	{
-		if (m_TargetValue != m_ScaleValue) 
-		{
-			float value = Mathf.Lerp (m_ScaleValue, m_TargetValue, Time.deltaTime * m_ZoomSpeed );
-			UpdateScaleBy (value);
-		}
+		m_ScaleValue = scaleValue;
+		rect.sizeDelta = new Vector2 (orgSizeOfTexture.width *m_ScaleValue , orgSizeOfTexture.height * m_ScaleValue );		
+
+		UpdateTargetPos (m_TargetLocalUnderScale1);
 	}
 
-	void TryMovePosition()
+	void CheckScaleAndAssignSuggestPosition()
 	{
 		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
 		mapRect.GetWorldCorners (m_MapCorners);
-
 		Vector3 suggestingMove = Vector3.zero;
 
 		bool valid = CheckIfCornersIsInsideScreen ( m_MapCorners , ref suggestingMove );
@@ -157,6 +191,9 @@ public class MapController : MonoBehaviour
 		} 
 	}
 
+	/**
+	 * Move by detal and set m_SuggestMovePosition by calling CheckIfCornersIsInsideScreen().
+	*/
 	void TryMovePosition( Vector3 delta )
 	{
 		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
@@ -182,29 +219,20 @@ public class MapController : MonoBehaviour
 	}
 
 
-	public void OnDragDelegate(PointerEventData data)
+	/**
+	 * Update m_TargetUnderMap.transform.localPosition
+	*/
+	void UpdateTargetPos( Vector3 localPosUnderScale1 )
 	{
-		Vector3 delta = new Vector3 (data.delta.x, data.delta.y, 0.0f);
-
-		TryMovePosition (delta);
+		if (null != m_TargetUnderMap) 
+		{
+			m_TargetUnderMap.transform.localPosition = localPosUnderScale1 * m_ScaleValue ;
+		}
 	}
 
-	public void OnBeginDrag(PointerEventData data)
-	{
-		m_IsUnderDrag = true;
-	}
-
-	public void OnEndDrag(PointerEventData data)
-	{
-		m_IsUnderDrag = false;
-	}
-
-	void UpdateScaleReal( RectTransform rect , float scaleValue )
-	{
-		m_ScaleValue = scaleValue;
-		rect.sizeDelta = new Vector2 (orgSizeOfTexture.width *m_ScaleValue , orgSizeOfTexture.height * m_ScaleValue );		
-	}
-
+	/**
+	 * Zoom by Input.GetTouch()
+	*/
 	void TryCheckZoomByPinch()
 	{
 		if (Input.touchCount != 2) 
@@ -223,57 +251,32 @@ public class MapController : MonoBehaviour
 
 		float scaleRatio = currentDistance.magnitude / m_PriviousTouchesDistance.magnitude;
 
-		TryCheckScale ( m_ScaleValue , m_TargetValue * scaleRatio);
+		SetScaleGoal ( m_TargetValue * scaleRatio);
 
 		m_PriviousTouchesDistance = currentDistance;
-
 	}
 
-	Vector3 TryCompensateScalePosition(float oldScale , float newScale)
+	/**
+	 * Calculate the localPosition position base on theration of oldScale and new Scale.
+	*/
+	Vector3 CalculateCompansatePositionFromScaleDiff(float oldScale , float newScale)
 	{
 		Vector3 newPos = mapRect.transform.localPosition / oldScale * newScale;
 		Vector3 diffVec = newPos - mapRect.transform.localPosition ;
-		// m_DebugText.text = string.Format ("{0}->{1},{2}" , oldScale , newScale , diffVec);
 		return diffVec;
-
 	}
 
-	void TryCheckScale( float oldScale , float newScale )
+	/**
+	 * Set m_TargetValue by newScale
+	*/
+	void SetScaleGoal( float newScale )
 	{
-		
-		// 0 left top, 1 left bottom, 2 right bottom, 3 right top.
-		mapRect.GetWorldCorners (m_MapCorners);
-
-		Vector3 center = m_MapCorners [0] + m_MapCorners [2];
-		center *= 0.5f;
-		for( int i = 0 ; i < m_MapCorners.Length ; ++i )
-		{
-			m_MapToCornerVec [i] = m_MapCorners [i] - center;
-			m_MapToCornerVec [i] = m_MapToCornerVec [i] / oldScale * newScale;
-			m_MapCorners [i] = center + m_MapToCornerVec [i];
-		}
-
-
-		if (true == CheckScaleIfMapIsSmallerThanScreen (m_MapCorners)) 
-		{
-			// Debug.LogWarning ("TryCheckScale() true == CheckScaleIfMapIsSmallerThanScreen");
-		} 
-
 		m_TargetValue = newScale;
-
 	}
 
-	bool CheckScaleIfMapIsSmallerThanScreen( Vector3 []corners )
-	{
-		Vector3 distance = corners [2] - corners [0];
-		bool ret = (distance.x <= (float)Screen.width - 0.01f || distance.y <= (float)Screen.height - 0.01f);
-		if (true == ret) 
-		{
-			// Debug.Log ("distance=" + distance );
-		}
-		return ret ;
-	}
-
+	/**
+	 * Check and calculate suggestingMove
+	*/
 	bool CheckIfCornersIsInsideScreen( Vector3 []corners, ref Vector3 suggestingMove )
 	{
 		bool ret = false  ;
@@ -311,21 +314,17 @@ public class MapController : MonoBehaviour
 		return ret;
 	}
 
-	float m_ZoomSpeed = 10.0f ;
-	float m_MovingSpeed = 10.0f ;
-
 	bool m_IsUnderDrag = false ;
-	Vector3[] m_MapToCornerVec = new Vector3[4];
 	Vector3[] m_MapCorners = new Vector3[4];
 	RectTransform mapRect ;
-	Sprite m_Sprite ;
 	Rect orgSizeOfTexture;
 	float m_ScaleValue = 1;
+	float m_TargetValue = 1 ;// target scale value
 
-	float m_TargetValue = 1 ;
 	Vector3 m_SuggestMovePosition = Vector3.zero ;
 	Vector3 m_PriviousTouchesDistance = Vector3.zero ;
 
 	float m_CheckNextTime = 0.0f ;
 
+	Vector3 m_TargetLocalUnderScale1 ;
 }
